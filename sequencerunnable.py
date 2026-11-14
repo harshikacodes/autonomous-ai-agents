@@ -16,13 +16,7 @@ model = ChatGroq(model = "openai/gpt-oss-120b")
 # output parser
 parser = StrOutputParser()
 
-# format the prompt
-formatted_prompt = prompt.format_messages(topic="Machine Learning")
+chain = prompt | model | parser
+result = chain.invoke("Machine Learning")
 
-# call the model manually
-response = model.invoke(formatted_prompt)
-
-# parse the output manually
-final_output = parser.parse(response.content)
-
-print(final_output)
+print(result)
