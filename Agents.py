@@ -62,4 +62,58 @@ def get_news(city : str)-> str:
 
     return f"Latest news in {city}: \n\n" + "\n\n".join(news_list)
 
-print(get_news.invoke("Gurugram"))
+# print(get_news.invoke("Gurugram"))
+
+llm = ChatGroq(model = "openai/gpt-oss-120b")
+
+tools = {
+    "get_weather": get_weather,
+    "get_news": get_news
+}
+
+llm_with_tools = llm.bind_tools([get_weather, get_news])
+
+# agent loop
+messages = []
+
+print("City Intellegence system")
+print("type Exit to quit")
+
+while True:
+    user_input = input("You: ")
+    if user_input.lower() == "exit":
+        break
+
+    messages.append(HumanMessage(content = user_input))
+
+    while True:
+        result = llm_with_tools.invoke(messages)
+        messages.append(result)
+
+        # if tool is required
+        if result.tool_calls:
+            for tool_call in result.tool_calls:
+                tool_name = tool_call['name']
+
+                # human in the loop
+                confirm = input(f"Agent wants to call {tool_name}. Approve (yes/no)")
+
+                if confirm.lower() not in ["yes", "y"]:
+                    print("Tool call denied")
+                    messages.append(ToolMessage(
+                        content="Tool call denied by user. Do not retry this tool call.Inform the user.",
+                        tool_call_id=tool_call['id']
+                    ))
+                    continue
+
+                # execute tool
+                tool_result = tools[tool_name].invoke(tool_call['args'])
+
+                messages.append(ToolMessage(
+                    content=tool_result,
+                    tool_call_id= tool_call['id']
+                ))
+            continue
+        else:
+            print(result.content)
+            break
