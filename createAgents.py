@@ -85,5 +85,3 @@ while True:
         "messages": [{"role": "user", "content": user_input}]
     })
     print(result)
-
-    
