@@ -84,4 +84,4 @@ while True:
     result = agent.invoke({
         "messages": [{"role": "user", "content": user_input}]
     })
-    print(result)
+    print("Bot: ", result['messages'][-1].content)
