@@ -9,6 +9,7 @@ from langchain_core.messages import HumanMessage, ToolMessage
 from tavily import TavilyClient
 from rich import print
 from langchain.agents import create_agent
+from langchain.agents.middleware import wrap_tool_call
 
 # weather tool
 @tool
@@ -67,10 +68,24 @@ def get_news(city : str)-> str:
 
 llm = ChatGroq(model = "openai/gpt-oss-120b")
 
+@wrap_tool_call
+def human_approval(request, handler):
+    """Ask for human approval before every tool call."""
+    tool_name = request.tool_call['name']
+    confirm = input(f"Agents wants to call '{tool_name}'. Approve? (yes/no): ")
+
+    if confirm.lower() != "yes":
+        return ToolMessage(
+            content = "Tool call denied by user.",
+            tool_call_id = request.tool_call['id']
+        )
+    return handler(request)
+
 agent = create_agent(
     llm,
     tools = [get_weather, get_news],
-    system_prompt = "You are a helpful city assitant."
+    system_prompt = "You are a helpful city assitant.",
+    middleware = [human_approval]
 )
 
 print("City Agent | type exit to quit.")
